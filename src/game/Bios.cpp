@@ -6,11 +6,13 @@
 
 // BIOS routines, see Bios.h. Written after the behaviour of C-BIOS 0.29
 // (MSX1 machine): register writes, VRAM contents, system variables and the
-// interrupt enable state the caller gets back.
+// interrupt enable state the caller gets back. The font is C-BIOS's
+// (src/third_party/CBiosFont.h).
 #include "Bios.h"
 
 #include "Machine.h"
 #include "Timing.h"
+#include "../third_party/CBiosFont.h"
 
 
 namespace bios {
@@ -97,6 +99,17 @@ ClearText(uint16_t count)
 
 
 uint8_t sScanCount = 3;
+
+
+// init_font: the font to the pattern table.
+void
+InitFont()
+{
+	SetWrite(M16(CGPBAS));
+	EI();
+	for (int i = 0; i < 2048; i++)
+		VdpOut(0, kCBiosFont[i]);
+}
 
 
 void
@@ -220,6 +233,7 @@ INITXT()
 	WRTVDP(0, M(RG0SAV) & 0xf1);
 	WRTVDP(1, static_cast<uint8_t>((M(RG1SAV) & 0xe7) | 0x10));
 	SetBaseRegisters(TXTNAM, true);
+	InitFont();
 	ClearText(40 * 24);
 	FinishModeChange();
 }
@@ -239,6 +253,7 @@ INIT32()
 	SetM16(CGPBAS, M16(T32CGP));
 	SetM16(PATBAS, M16(T32PAT));
 	SetM16(ATRBAS, M16(T32ATR));
+	InitFont();
 	M(LINLEN) = M(LINL32);
 	WRTVDP(0, M(RG0SAV) & 0xf1);
 	WRTVDP(1, M(RG1SAV) & 0xe7);

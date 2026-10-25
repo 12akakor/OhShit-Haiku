@@ -9,8 +9,9 @@
 // The MSX BIOS routines the program calls, rewritten with the effects of
 // C-BIOS (the BIOS of the reference machine) on what the game can see:
 // video memory and registers, PSG registers, system variables, and whether
-// interrupts are enabled afterwards. The font is not loaded (the game
-// loads all characters it shows during play).
+// interrupts are enabled afterwards. INIT32 and INITXT load C-BIOS's font,
+// as the reference machine does (the game replaces it with its own
+// characters; the joystick test shows it).
 
 #include <stdint.h>
 
