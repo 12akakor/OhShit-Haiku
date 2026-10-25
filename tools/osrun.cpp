@@ -14,10 +14,13 @@
 //     -key f:row,bit:n   hold a key from frame f for n frames
 //     -joy f:bits:n      hold joystick bits from frame f for n frames
 //     -wav file          write the PSG output (speech included) as a WAV
+//     -psglog file       write all PSG writes as text: cycle reg value pc
 //     -cov file          write the coverage (see below) at the end; it
 //                        starts when the game starts (#8107), after the
 //                        loader has copied it
 //     -random seed       random joystick play (direction changes, fire)
+//     -call f:addr:a     at the start of frame f, call addr with A = a (as
+//                        if the running code did; for testing routines)
 //     -bios-calls        print the BIOS entry points the game calls
 //     -ports             print which code uses which I/O ports, and how often
 //     -ram f:file        write the 64 KB RAM after frame f
@@ -200,11 +203,13 @@ main(int argc, char** argv)
 	std::vector<long> shots;
 	long every = 0;
 	std::vector<Hold> holds;
-	std::string wavPath, covPath;
+	std::string wavPath, covPath, psgLogPath;
 	std::vector<std::pair<long, std::string> > ramDumps, vramDumps;
 	bool ports = false;
 	bool biosCalls = false;
 	long randomSeed = -1;
+	struct Call { long frame; int address; int a; };
+	std::vector<Call> calls;
 
 	for (int i = 3; i < argc; i++) {
 		std::string a = argv[i];
@@ -238,8 +243,17 @@ main(int argc, char** argv)
 		} else if (a == "-wav") {
 			wavPath = v;
 			i++;
+		} else if (a == "-psglog") {
+			psgLogPath = v;
+			i++;
 		} else if (a == "-cov") {
 			covPath = v;
+			i++;
+		} else if (a == "-call") {
+			Call c;
+			if (sscanf(v.c_str(), "%ld:%x:%x", &c.frame, &c.address, &c.a) != 3)
+				return 1;
+			calls.push_back(c);
 			i++;
 		} else if (a == "-random") {
 			randomSeed = atol(v.c_str());
@@ -280,7 +294,7 @@ main(int argc, char** argv)
 		return 1;
 	}
 	machine.Reset();
-	machine.logPsg = !wavPath.empty();
+	machine.logPsg = !wavPath.empty() || !psgLogPath.empty();
 	// (direction, port, pc) -> count; the PC is that of the next
 	// instruction, which is close enough to find the routine.
 	std::map<uint32_t, uint64_t> portUse;
@@ -345,6 +359,17 @@ main(int argc, char** argv)
 				machine.SetKey(h.row, h.bit, true);
 		}
 		machine.SetJoystick(joy);
+		for (const Call& c : calls) {
+			if (c.frame != f)
+				continue;
+			Z80Regs& r = machine.Cpu().r;
+			r.sp -= 2;
+			machine.Write(r.sp, static_cast<uint8_t>(r.pc));
+			machine.Write(static_cast<uint16_t>(r.sp + 1),
+				static_cast<uint8_t>(r.pc >> 8));
+			r.pc = static_cast<uint16_t>(c.address);
+			r.a = static_cast<uint8_t>(c.a);
+		}
 		machine.RunFrame();
 		long done = f + 1;
 		bool shot = every > 0 && done % every == 0;
@@ -366,6 +391,15 @@ main(int argc, char** argv)
 		WriteWav(wavPath, machine.psgLog, machine.Time());
 	if (!covPath.empty())
 		WriteFile(covPath, coverage.data(), coverage.size());
+	if (!psgLogPath.empty()) {
+		FILE* f = fopen(psgLogPath.c_str(), "w");
+		if (f != NULL) {
+			for (const Machine1::PsgWrite& w : machine.psgLog)
+				fprintf(f, "%llu %d %d %04X\n",
+					static_cast<unsigned long long>(w.time), w.reg, w.value, w.pc);
+			fclose(f);
+		}
+	}
 	for (auto& u : biosUse) {
 		printf("bios %04X from %04X  %llu\n", u.first >> 16, u.first & 0xffff,
 			static_cast<unsigned long long>(u.second));

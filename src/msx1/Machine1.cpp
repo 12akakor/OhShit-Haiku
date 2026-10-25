@@ -144,7 +144,7 @@ Machine1::Out(uint16_t port, uint8_t value)
 		case 0xa1:
 			if (logPsg) {
 				PsgWrite w = { fLineStart + static_cast<uint64_t>(fCycles),
-					fPsgLatch, value };
+					fPsgLatch, value, fCpu.r.pc };
 				psgLog.push_back(w);
 			}
 			fPsg.Write(fPsgLatch, value);

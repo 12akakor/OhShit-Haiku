@@ -33,6 +33,7 @@ public:
 		uint64_t	time;	// CPU cycle
 		uint8_t		reg;
 		uint8_t		value;
+		uint16_t	pc;		// of the instruction after the OUT
 	};
 
 							Machine1();
