@@ -79,8 +79,42 @@ instructions, no conflicts). It reassembles byte for byte with Sjasm 0.39j.
   tables are taken, at their own places). Checked with checksums of the
   code and data of the original.
 
+## 25 October 2026: the Haiku application
+
+- **Sound**: `src/audio/PsgSound` is an AY-3-8910 that takes every
+  register write at its CPU cycle, so the 1 bit speech (the volume of
+  channel C switched thousands of times a second) comes out as on the
+  real machine. Output 44.1 kHz stereo (channel A left, B right, C in the
+  middle, width adjustable), DC filter, optional gentle low pass.
+- **Speech timing**: the cycles charged per speech byte were 13 short;
+  now equal to the original's loop (34 cycles to the OUT, then the
+  countdown, 67 for the rest of the loop). `osnative -wav` writes the
+  sound of the rewrite for comparison with `osrun -wav`.
+- The eight speech samples are named after where the game plays them:
+  0 dying, 1 game over, 2 Joey, 3 Paul, 4 Willy, 5 Frankie, 6 "and",
+  7 "Oh Shit" on the title. Not yet checked by listening.
+- **Application** (`src/main.cpp`, `src/platform` from the Metal Gear
+  port): finds the game file (or asks for one and keeps a copy in the
+  settings folder; a file dropped on the window replaces it), picture
+  filters, stereo width, softer sound, no sprite flicker (lifts the four
+  sprites per line limit), full screen, wait for the screen refresh.
+  Settings in `OhShit.settings`. The game paces itself at the original's
+  59.92 frames per second.
+- **Icon**: an original design (a corner of a blue maze, a row of dots and
+  a speech bubble), made by `tools/icon/make_icon.py` as HVIF plus PNGs;
+  `src/OhShit.rdef` holds the icon, signature
+  `application/x-vnd.Akakor-OhShit` and version.
+- `make` builds `OhShit` on Haiku, `make package` the hpkg with a Deskbar
+  entry.
+
+How this was tested: the Haiku sources pass a syntax check against the
+Haiku headers (`tools/check/haiku_syntax.sh`); `make test` (load test and
+two differential runs of 30000 frames, 0 failures) after every change to
+the game code. The application has not been run on Haiku yet.
+
 ## Next steps
 
-1. Haiku application: window, sound (PSG and speech), keys and joystick,
-   settings, package.
-2. Improvements, after the example of the Metal Gear port.
+1. Run the application in the Haiku VM: picture, sound and speech, keys,
+   joystick, settings, package install.
+2. Listen to the speech samples and correct the names if needed.
+3. Improvements, after the example of the Metal Gear port.
