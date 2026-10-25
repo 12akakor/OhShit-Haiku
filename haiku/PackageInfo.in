@@ -1,0 +1,23 @@
+name			ohshit
+version			@VERSION@-1
+architecture	@ARCH@
+summary			"Oh Shit! (Aackosoft, MSX1, 1986) as a native Haiku game"
+description		"A native C++ port of Oh Shit! (Aackosoft, MSX1, 1986), the maze game with digitized speech, rewritten routine by routine from the original program and checked against it. Smooth picture at any size, no sprite flicker, stereo. The game file is not included: the game asks for a cassette, disk or ROM image of it on the first start."
+
+packager		"Akakor <197073812+12akakor@users.noreply.github.com>"
+vendor			"Akakor"
+copyrights {
+	"2026 Akakor"
+}
+licenses {
+	"MIT"
+}
+urls			"https://github.com/12akakor/OhShit-Haiku"
+
+provides {
+	ohshit = @VERSION@
+	app:OhShit = @VERSION@
+}
+requires {
+	haiku
+}
