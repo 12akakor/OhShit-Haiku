@@ -174,8 +174,10 @@ BLocker sAudioLock("mg audio");
 BSoundPlayer* sPlayer = NULL;
 PlatAudioCallback sAudioCallback = NULL;
 void* sAudioCookie = NULL;
-int16_t* sAudioTemp = NULL;
-size_t sAudioTempFrames = 0;
+// Conversion buffer for float output, fixed size: nothing is allocated in
+// the audio callback.
+const size_t kAudioTempFrames = 16384;
+int16_t sAudioTemp[kAudioTempFrames * 2];
 
 char sDataDir[B_PATH_NAME_LENGTH];
 char sSettingsDir[B_PATH_NAME_LENGTH];
@@ -1124,10 +1126,10 @@ PlayerCallback(void* /*cookie*/, void* buffer, size_t size,
 			sAudioCookie);
 	} else if (format.format == media_raw_audio_format::B_AUDIO_FLOAT) {
 		size_t frames = size / 8;
-		if (frames > sAudioTempFrames) {
-			delete[] sAudioTemp;
-			sAudioTemp = new int16_t[frames * 2];
-			sAudioTempFrames = frames;
+		if (frames > kAudioTempFrames) {
+			memset(buffer, 0, size);
+			sAudioLock.Unlock();
+			return;
 		}
 		sAudioCallback(sAudioTemp, static_cast<int>(frames), sAudioCookie);
 		float* out = reinterpret_cast<float*>(buffer);
@@ -1186,9 +1188,6 @@ PlatAudioClose(void)
 	sPlayer = NULL;
 	sAudioLock.Lock();
 	sAudioCallback = NULL;
-	delete[] sAudioTemp;
-	sAudioTemp = NULL;
-	sAudioTempFrames = 0;
 	sAudioLock.Unlock();
 }
 
