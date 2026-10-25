@@ -7,3 +7,7 @@
 *.dsk
 *.bin
 /dis/
+/osnative
+/game_diff
+/osprof
+/load_test

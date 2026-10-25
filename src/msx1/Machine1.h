@@ -19,7 +19,7 @@
 
 #include "../z80/Z80.h"
 #include "Psg.h"
-#include "Tms9918.h"
+#include "../video/Tms9918.h"
 
 
 class Machine1 : public Z80Bus {
@@ -61,6 +61,9 @@ public:
 			uint8_t			SlotRegister() const { return fSlots; }
 			uint64_t		Frames() const { return fFrames; }
 			uint64_t		Time() const { return fTime; }
+	// The CPU cycle now, also in the middle of a line.
+			uint64_t		Now() const
+								{ return fLineStart + static_cast<uint64_t>(fCycles); }
 
 	// Z80Bus
 	virtual	uint8_t			Read(uint16_t address);

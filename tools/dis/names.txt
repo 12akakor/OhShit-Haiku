@@ -1,0 +1,335 @@
+# BIOS entry points
+0000 CHKRAM ; reset
+004D WRTVRM
+005C LDIRVM
+0062 CHGCLR
+0069 CLRSPR
+006C INITXT
+006F INIT32
+0093 WRTPSG
+0096 RDPSG
+00A2 CHPUT
+00C3 CLS
+00D5 GTSTCK
+00D8 GTTRIG
+0141 SNSMAT
+0156 KILBUF
+# system variables
+F3BF T32COL
+F3DF RG0SAV
+F3E0 RG1SAV
+F3E9 FORCLR
+F3EA BAKCLR
+F3EB BDRCLR
+FBEC NEWKEY7 ; NEWKEY row 7
+FC9E JIFFY
+FCAF SCRMOD
+FD9A HKEYI ; H.KEYI hook
+FD9F HTIMI ; H.TIMI hook
+# delay counts and timer start values, not addresses
+=84D7
+=9681
+=990F
+=9967
+=9A03
+=9A25
+=9AA7
+=9E33
+# --- program ---
+8107 Start ; entry point (exec address of the cassette block)
+8115 SavedSP ; stack pointer at start, restored on every restart
+8117 Lives
+8118 Level ; 0 = first maze
+8119 DemoMode ; 1 while the attract demo plays
+811A Score ; 6 decimal digits, most significant first; +4 = tens (a dot), +3 = hundreds
+811D ScoreHundreds
+811E ScoreTens
+811F ScoreUnits
+8120 PauseSavedText ; 6 characters under "PAUSED"
+8126 PauseSavedPsg ; PSG registers 0-12 during the pause
+8135 TxtPaused
+813B TxtReady
+8141 Paused ; the interrupt skips the game updates when set
+8142 ExtraLifeGiven
+8143 LoopDelay ; busy wait per main loop pass (game speed), lower each level
+8145 RandomValue
+8146 FruitListPos ; name table address of the next fruit in the level list
+8148 StickToDir ; GTSTCK 0-8 to direction bits (1 up, 2 right, 4 down, 8 left)
+8151 FruitCharByLevel
+815F SpriteRotation ; 0-5, rotates the sprite order against the 4 per line limit
+8160 SpritePlayer ; 7 sprites of 4 bytes: player, 4 ghosts, ghost score, fruit
+8164 SpriteGhosts
+8174 SpriteGhostScore
+8178 SpriteFruit
+817C SpriteOut ; rotated copy sent to the VDP
+8198 Init ; screen 1 (32x24), colours, sprites
+81B7 Restart ; silence, then the title
+81BD NewGame
+823F MainLoop
+826E LoopWait ; busy wait LoopDelay
+8277 CheckEsc ; ESC: back to the title
+8287 PosToName ; (de) = x,y in pixels -> hl = name table address
+82AC Touches ; carry if the positions at (hl) and (de) are within 4 pixels
+82B6 AbsDiffMinus4
+82C5 AddScore ; normalise and print the score, extra life at 10000
+82F0 NormaliseScore
+830B PrintScore
+832A DrawLives
+8378 DrawNextFruit
+83E1 CheckPause ; P pauses, P again continues
+8447 KeyP ; Z set if P is pressed
+844F ReadStick ; keyboard and both joysticks -> direction bits, Z if none
+8468 ReadTrigger ; space and both joysticks
+8476 Random
+84A0 RandomByte ; reads a byte at #5000-#5007 of page 1 (BIOS or cartridge)
+84B2 DrawMaze
+84BE ShowReady
+84F4 ClearScreen
+84FF ; unused: 16 bit division, never called
+851E StopInterrupt ; H.KEYI = RET, sprites off
+8526 StartInterrupt ; H.KEYI = JP Interrupt
+853B Interrupt ; replaces the BIOS interrupt handler completely
+85AA ColourTableGame
+85CA SirenPitch
+85D8 SilencePsg
+85F1 StartSiren
+863E UpdateSound
+86BD FrightSoundOn
+86C3 FrightSoundOff
+86C8 EyesSoundOn
+86D3 EyesSoundOff
+86F1 UpdateChomp
+8729 PlayChomp
+876E UpdateEatGhostSound
+879A PlayEatGhostSound
+87B8 PsgRead
+87BB PsgWrite
+87BE SpeechTable ; 8 samples: start, end (offsets, +#3D00)
+87DE SpeechLevel
+87E3 Say ; A = sample; saves the PSG, speaks, pauses, restores
+882C PlaySample ; 1 bit speech on the volume of channel C, interrupts off
+8872 PlaySampleLoop
+889E SpeechPause
+88A7 HiscorePlace
+88A8 HiscoreOffset
+88AB HiscoreNamePos
+88AD HiscoreNamePositions
+88B7 TitleSpriteJoey
+88BB TitleSpritePaul
+88BF TitleSpriteWilly
+88C3 TitleSpriteFrankie
+88C7 DrawHiscores
+88EF EnterHiscore
+8A3B InputDelay
+8A44 Title
+8B42 PrintLine ; 32 characters from (hl) to name table de, plus c
+8B4F LoadCharset
+8B9D SkipInDemo ; returns from the caller in demo mode
+8BA4 CheckSelect ; SELECT: joystick test
+8BC0 ColourTableTitle
+8BE0 HiscoreTable ; 5 lines of 14 characters
+8C26 TxtPressFire
+8C46 TxtWrittenBy
+8C66 TxtSpeechBy
+8C86 TxtCopyright
+8CA6 TxtSelect
+8CC6 TxtOhShit
+8D06 TxtGhostNames
+8D26 Alphabet
+8D45 Ghosts ; 4 x (y, x, pattern, colour)
+8D46 GhostX
+8D47 GhostPattern
+8D48 GhostColour
+8D55 GhostHouseDir
+8D59 GhostDir
+8D5D GhostInHouse
+8D62 GhostHouseTimer ; 4 words
+8D6A GhostLeaving
+8D6E GhostMoveTimer
+8D72 GhostEyesTimer
+8D76 FrightTimer
+8D7A GhostState ; 0 normal, 1 eyes going home, #FF blue
+8D7F GhostStart
+8DDC InitGhosts
+8E53 CopyGhostSprites
+8E78 HideGhosts
+8E89 UpdateGhosts
+8EBE UpdateGhostInHouse
+8F9E GhostCentre
+8FB9 GhostReverseCheck
+8FD6 GhostChase
+9002 GhostSteer
+9461 IsWall ; carry if the cell at (de) blocks
+9479 UpdateFright
+94F2 AnimateGhosts
+9536 UpdateEyes
+95BE GhostScorePause
+95E5 GhostReverse
+964D CheckLevelDone ; 205 dots eaten
+96B4 NextMaze
+96CD Intermission1
+97DC Intermission2
+98A4 RedrawFruitList
+98C9 CopyIntermissionSprites
+98FB HideSprites
+9906 ShortWait
+990F LongWait
+9914 FruitTimer
+9967 InitFruit
+9988 UpdateFruit
+9ABC BlinkPills
+9AE4 UpdateScatter
+9AFF PlayerStepTimer
+9B00 PlayerMoveTimer
+9B01 PlayerDir
+9B02 Player ; y, x, pattern, colour
+9B06 PlayerCentre
+9B08 PlayerAnimPtr
+9B0A PlayerAnimStep
+9B26 DotsEaten
+9B27 Frightened
+9B28 Dying
+9B32 GhostsEaten
+9B54 TxtGameOver
+9B6D ReverseGhosts
+9B6E InitPlayer
+9BA4 SetPlayerSprite
+9BCC UpdatePlayer
+9C87 MovePlayer
+9D21 CanMove
+9D3A EatDot
+9D5B EatPill
+9DB7 SetPlayerCentre
+9DC8 AnimatePlayer
+9DF2 CheckGhostCollision
+9E12 PlayerDies
+9E6A GameOver
+9E8B EatGhost
+9F00 DemoInput
+9F3C VdpReadAddress
+9F51 VdpWriteAddress
+9F65 VdpFill ; a to VRAM hl, bc bytes
+9F68 VdpFillEi
+9F81 VdpPoke
+9F92 VdpPeek
+9FA1 SetColours ; like BIOS CHGCLR
+9FDF VdpWriteReg
+9FFD VdpRead ; VRAM hl to de, bc bytes
+A01B VdpWrite ; hl to VRAM de, bc bytes
+A03B WithDi ; runs the rest of the calling routine with interrupts off
+A04E InInterrupt
+A054 WaitKeysUp
+A067 CheckReturn
+A088 PrintText ; text up to "$" with CHPUT
+A0A7 JoystickTest
+# --- data ---
+A500 SpeechData
+DD00 MazeChars
+DE80 DigitChars
+DF08 LetterChars
+E500 MazeMap ; name table, 32 x 24
+E800 SpritePatterns
+E820 LivesChars
+# sound variables
+85CB SirenRising
+85CC SirenTone
+85CD SirenTimer
+85CE ToneTimer
+85CF FrightSound
+85D0 EyesSound
+85D1 ChompPitch
+85D2 ChompOn
+85D3 ChompHigh
+85D5 EatGhostPitch
+85D6 EatGhostTimer
+85D7 EatGhostSound
+87DF SpeechSavedPsg
+# player variables and tables
+9B03 PlayerX
+9B04 PlayerPattern
+9B07 PlayerCentreX
+9B0B PlayerAnimTimer
+9B0C PlayerUnused1
+9B0D PlayerUnused2
+9B0E AnimLeft
+9B13 AnimRight
+9B18 AnimUp
+9B1D AnimDown
+9B22 PlayerStart
+9B29 DeathAnim
+9B33 GhostPoints ; hundreds per ghost: 2, 4, 8, 16
+9B37 GhostScorePatterns
+9B3B GhostScoreSprite
+9B3D GhostScorePattern
+9B3F SavedPlayerY
+9B40 DemoDirs
+9B44 PlayerSpeedByLevel
+9B5D FrightTimeByLevel
+8DD9 ScorePause ; set while the score of an eaten ghost shows
+8DDA ScorePauseTimer
+# ghost variables and tables
+8D41 GhostHouseTick ; 4 counters, a house step when they wrap
+8D61 GhostAnimTimer
+8D7E FrightTick
+8D8F GhostStartHouseDir
+8D93 GhostStartDir
+8D97 GhostStartInHouse
+8D9B GhostStartHouseTimer
+8DA3 GhostCentrePos ; y + 9, x + 8 of the ghost being moved
+8DA5 FrightSlowByLevel
+8DB4 GhostSpeedByLevel
+8DC4 GhostPatternByDir
+8DCD EyesPatternByDir
+8DD6 ChaseTarget ; y, x the ghost heads for
+8DD7 ChaseTargetX
+# fruit
+9916 FruitCount
+9917 FruitShown
+9918 FruitScoreShown
+9919 FruitSpriteStart
+991D FruitSprite
+9920 FruitColour
+9921 FruitColourByLevel
+9931 FruitPointsByLevel ; hundreds
+993F FruitScoreDigits ; two characters per level
+995B BlinkTimer
+995C BlinkPhase
+995D PillChar
+9965 ScatterTimer
+# intermissions
+9602 CutSprites ; 5 sprites (y, x, pattern, colour)
+9603 CutSpritesX
+9604 CutSprite0Pattern
+9607 CutSprite1X
+9608 CutSprite1Pattern
+960C CutSprite2Pattern
+9614 CutSprite4Pattern
+9616 CutStart1
+961E CutStart2
+9632 CutTimerA
+9633 CutTimerB
+9634 CutAnimTimer
+9635 CutAnimStep
+9636 CutPlayerAnim
+963B CutGhostAnim
+9645 CutShrinkPatterns
+# joystick test
+A050 JoyTestPort ; also the colour of the fire sprite
+A051 JoyTestStick
+A052 PrintPointer
+A09B JoyTestNotOk
+A1A4 JoyTestShowDir
+A1B9 JoyTestLight
+A1C8 JoyTestDirSprites
+A1D8 JoyTestPatterns
+A278 JoyTestSprites
+A28C TxtJoyTitle
+A2C5 TxtJoyRelease
+A2EF TxtJoyPressReturn
+A306 TxtNewLine
+A309 TxtJoyPort
+A315 TxtJoyOk
+A319 TxtJoyNotOk
+A321 TxtJoyConnect
+A340 TxtJoyExit
+A35E TxtJoyKeyboard

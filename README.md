@@ -10,6 +10,10 @@ The game files are not included; the player provides a ROM, cassette
 
 ## Status
 
+- The whole program rewritten in C++ (`src/game`), checked against the
+  original with a differential test (0 failures in over 400000
+  comparisons) and running at the original's speed. Loads the cassette,
+  disk and ROM versions. The Haiku application is next.
 - MSX1 reference machine for the tests (`src/z80`, `src/msx1`): Z80,
   TMS9918A, PSG, PPI, real C-BIOS as the BIOS. Its video memory and game
   state match openMSX with the same BIOS.

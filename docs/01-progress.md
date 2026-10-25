@@ -42,13 +42,45 @@ instructions, no conflicts). It reassembles byte for byte with Sjasm 0.39j.
 - **Speech:** 8 samples, 1 bit: every byte is a duration, the volume of
   channel C toggles between 15 and 0. Interrupts are off while speaking
   (the game stands still).
-- **Random numbers** in the demo come from bytes at #5000-#5007 of page 1,
+- **Random numbers** in the demo come from bytes at #5000-#58FF of page 1,
   so from the BIOS (cassette, disk) or the cartridge (ROM version).
+
+## 25 October 2026: the whole program in C++
+
+- Every routine of the original is rewritten in C++ (`src/game`), after
+  the disassembly, with the original's names. The variables stay at their
+  addresses in one 64 KB array, so each routine can be compared with the
+  original. Quirks are kept where they change the state: the address
+  WithDi stores in its own CALL, the blue ghosts negating the byte after
+  their target, the ghost reverse that always gives the same direction.
+- The BIOS calls the program makes are rewritten after C-BIOS (the BIOS of
+  the reference machine): VDP and PSG effects and the interrupt state they
+  leave.
+- **Differential test** `game_diff`: the original on the reference machine
+  and the rewrite run in step; at every pass of the main loop (and the
+  title, the name entry, the pause) RAM #8107-#EFFF, JIFFY, VRAM, VDP and
+  PSG registers and the interrupt flag are compared. Interrupts happen at
+  those points on both sides; LD A,R values of the original are replayed.
+  With random play, jumps to the end of a maze (`-warp`) and moves of the
+  player or ghosts onto fruit, pills and each other (`-poke`): 0 failures
+  in over 400000 comparisons, through games, demo, name entry, pause,
+  levels up to 11 and both intermissions. Line coverage of the rewrite:
+  95 to 100 percent per file, apart from the joystick test.
+- **Speed**: the original has no fixed frame rate; a pass of the main loop
+  takes its work plus a busy wait that gets shorter every maze. The
+  rewrite charges the CPU cycles of the original for every routine
+  (measured with `osprof`, per path where the cost differs), the exact
+  cycles of the busy waits and of the speech loop. Measured against the
+  original: normal passes within 0.1 percent, everything (deaths,
+  intermissions) within 0.3 percent.
+- **Game files**: all nine known files load (`load_test`): the Aackosoft
+  cassette and its File-Hunter copy, the disk, the three ROM conversions,
+  and the ByteBusters cassettes (their rebuilt program block: only the
+  tables are taken, at their own places). Checked with checksums of the
+  code and data of the original.
 
 ## Next steps
 
-1. Finish names and comments (ghosts, fruit, intermissions).
-2. Rewrite in C++ routine by routine, with differential tests as in the
-   Metal Gear port.
-3. Speech with the same timing model as the original loop.
-4. Loading from ROM, CAS and DSK (recognising all nine files).
+1. Haiku application: window, sound (PSG and speech), keys and joystick,
+   settings, package.
+2. Improvements, after the example of the Metal Gear port.
