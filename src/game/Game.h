@@ -79,6 +79,19 @@ void		PlayChomp();
 void		PlayEatGhostSound();
 void		Say(uint8_t sample);
 
+// The eight speech samples. The names follow where the game plays them
+// (not yet checked by listening).
+enum {
+	kSpeechDying = 0,		// the player is caught
+	kSpeechGameOver = 1,
+	kSpeechJoey = 2,		// title: the ghost names, one by one
+	kSpeechPaul = 3,
+	kSpeechWilly = 4,
+	kSpeechFrankie = 5,
+	kSpeechAnd = 6,		// "... and" before Frankie
+	kSpeechOhShit = 7		// title: the name of the game
+};
+
 // Title and high scores
 [[noreturn]] void	Title();
 void		DrawHiscores();

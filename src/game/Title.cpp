@@ -199,16 +199,16 @@ Title()
 	PrintLine(TxtSelect, 0x1ac0, 0x80);
 	PrintLine(TxtOhShit, 0x19e0, 0x40);
 	PrintLine(TxtGhostNames, 0x1880, 0x60);
-	Say(7);
+	Say(kSpeechOhShit);
 	VdpWrite(TitleSpriteJoey, 0x1b00, 0x0004);
-	Say(2);
+	Say(kSpeechJoey);
 	VdpWrite(TitleSpritePaul, 0x1b04, 0x0004);
-	Say(3);
+	Say(kSpeechPaul);
 	VdpWrite(TitleSpriteWilly, 0x1b08, 0x0004);
-	Say(4);
-	Say(6);
+	Say(kSpeechWilly);
+	Say(kSpeechAnd);
 	VdpWrite(TitleSpriteFrankie, 0x1b0c, 0x0004);
-	Say(5);
+	Say(kSpeechFrankie);
 	for (int b = 0x80; b > 0; b--) {
 		Sync(0x8aee);
 		WaitCountDownDE(0x1000);

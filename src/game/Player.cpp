@@ -203,7 +203,7 @@ GameOver()
 	ClearScreen();
 	StopInterrupt();
 	VdpWrite(TxtGameOver, 0x19ab, 0x0009);
-	Say(1);
+	Say(kSpeechGameOver);
 	EnterHiscore();
 	throw ::Restart{ sym::code::Title };
 }
@@ -215,7 +215,7 @@ PlayerDies()
 	Cost(2000, 0x9e12);
 	M(Dying) = 1;
 	SilencePsg();
-	Say(0);
+	Say(kSpeechDying);
 	UpdateFruit();
 	HideGhosts();
 	for (int c = 8; c > 0; c--) {
