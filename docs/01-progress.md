@@ -98,7 +98,7 @@ instructions, no conflicts). It reassembles byte for byte with Sjasm 0.39j.
   settings folder; a file dropped on the window replaces it), picture
   filters, stereo width, softer sound, no sprite flicker (lifts the four
   sprites per line limit), full screen, wait for the screen refresh.
-  Settings in `OhShit.settings`. The game paces itself at the original's
+  Settings in `OhShit.settings` (a flattened BMessage). The game paces itself at the original's
   59.92 frames per second.
 - **Icon**: an original design (a corner of a blue maze, a row of dots and
   a speech bubble), made by `tools/icon/make_icon.py` as HVIF plus PNGs;

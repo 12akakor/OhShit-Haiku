@@ -83,6 +83,11 @@ int PlatAsk(const char* title, const char* text, const char* first, const char* 
 // Shows a short message over the picture for a few seconds.
 void PlatShowMessage(const char* text);
 
+// Settings: integer values by name, kept as a flattened BMessage in the
+// file at 'path'. Load changes only the values that are in the file.
+bool PlatLoadSettings(const char* path, const char* const* keys, int* values, int count);
+bool PlatSaveSettings(const char* path, const char* const* keys, const int* values, int count);
+
 
 // Picture improvements ---------------------------------------------------
 

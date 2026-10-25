@@ -357,58 +357,54 @@ SettingsPath()
 	return std::string(PlatSettingsDir()) + "/OhShit.settings";
 }
 
+// The saved values: the settings, then the window place.
+const int kWindowKeys = 4;
+const char* const kWindowKeyNames[kWindowKeys] = { "window_x", "window_y", "window_w",
+	"window_h" };
+
 void
 LoadSettings()
 {
-	FILE* fp = fopen(SettingsPath().c_str(), "r");
-	if (fp == NULL)
-		return;
-	char line[128], key[32], word[32];
-	while (fgets(line, sizeof(line), fp) != NULL) {
-		int x, y, w, h;
-		if (sscanf(line, "window %d %d %d %d", &x, &y, &w, &h) == 4) {
-			sWindowPlace[0] = x;
-			sWindowPlace[1] = y;
-			sWindowPlace[2] = w;
-			sWindowPlace[3] = h;
-			continue;
-		}
-		if (sscanf(line, "%31s %31s", key, word) != 2)
-			continue;
-		for (int i = 0; i < kSetCount; i++) {
-			if (strcmp(key, kKeys[i]) != 0)
-				continue;
-			int value = atoi(word);
-			if (i == kSetFilter) {
-				for (int c = 0; c < 3; c++) {
-					if (strcmp(word, kFilterNames[c]) == 0)
-						value = c;
-				}
-			}
-			if (value >= 0 && value < (sSettings[i].choices != NULL ? sSettings[i].count : 2))
-				sSettings[i].value = value;
-		}
+	const char* keys[kSetCount + kWindowKeys];
+	int values[kSetCount + kWindowKeys];
+	for (int i = 0; i < kSetCount; i++) {
+		keys[i] = kKeys[i];
+		values[i] = sSettings[i].value;
 	}
-	fclose(fp);
+	for (int i = 0; i < kWindowKeys; i++) {
+		keys[kSetCount + i] = kWindowKeyNames[i];
+		values[kSetCount + i] = sWindowPlace[i];
+	}
+	if (!PlatLoadSettings(SettingsPath().c_str(), keys, values, kSetCount + kWindowKeys))
+		return;
+	for (int i = 0; i < kSetCount; i++) {
+		int limit = sSettings[i].choices != NULL ? sSettings[i].count : 2;
+		if (values[i] >= 0 && values[i] < limit)
+			sSettings[i].value = values[i];
+	}
+	for (int i = 0; i < kWindowKeys; i++)
+		sWindowPlace[i] = values[kSetCount + i];
 }
 
 void
 SaveSettings()
 {
-	FILE* fp = fopen(SettingsPath().c_str(), "w");
-	if (fp == NULL)
-		return;
-	fprintf(fp, "# Oh Shit! settings (F6 shows the settings window)\n");
+	const char* keys[kSetCount + kWindowKeys];
+	int values[kSetCount + kWindowKeys];
 	for (int i = 0; i < kSetCount; i++) {
-		if (i == kSetFilter)
-			fprintf(fp, "%s %s\n", kKeys[i], kFilterNames[sSettings[i].value]);
-		else
-			fprintf(fp, "%s %d\n", kKeys[i], sSettings[i].value);
+		keys[i] = kKeys[i];
+		values[i] = sSettings[i].value;
 	}
+	int count = kSetCount;
 	int x, y, w, h;
-	if (PlatGetWindow(&x, &y, &w, &h))
-		fprintf(fp, "window %d %d %d %d\n", x, y, w, h);
-	fclose(fp);
+	if (PlatGetWindow(&x, &y, &w, &h)) {
+		int place[kWindowKeys] = { x, y, w, h };
+		for (int i = 0; i < kWindowKeys; i++, count++) {
+			keys[count] = kWindowKeyNames[i];
+			values[count] = place[i];
+		}
+	}
+	PlatSaveSettings(SettingsPath().c_str(), keys, values, count);
 }
 
 

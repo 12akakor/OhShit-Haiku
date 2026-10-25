@@ -46,6 +46,7 @@
 #include <MediaDefs.h>
 #include <MenuField.h>
 #include <MenuItem.h>
+#include <Message.h>
 #include <Messenger.h>
 #include <NodeInfo.h>
 #include <OS.h>
@@ -1097,6 +1098,33 @@ PlatPumpEvents(void)
 
 
 // Files -----------------------------------------------------------------
+
+bool
+PlatLoadSettings(const char* path, const char* const* keys, int* values, int count)
+{
+	BFile file(path, B_READ_ONLY);
+	BMessage settings;
+	if (file.InitCheck() != B_OK || settings.Unflatten(&file) != B_OK)
+		return false;
+	for (int i = 0; i < count; i++) {
+		int32 value;
+		if (settings.FindInt32(keys[i], &value) == B_OK)
+			values[i] = value;
+	}
+	return true;
+}
+
+
+bool
+PlatSaveSettings(const char* path, const char* const* keys, const int* values, int count)
+{
+	BMessage settings;
+	for (int i = 0; i < count; i++)
+		settings.AddInt32(keys[i], values[i]);
+	BFile file(path, B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
+	return file.InitCheck() == B_OK && settings.Flatten(&file) == B_OK;
+}
+
 
 const char*
 PlatDataDir(void)
