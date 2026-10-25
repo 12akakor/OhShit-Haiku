@@ -12,6 +12,7 @@
 //     -every n           screenshot every n frames
 //     -key f:row,bit:n   hold a key from frame f for n frames
 //     -joy f:bits:n      hold joystick 1 bits from frame f for n frames
+//     -wav file          the sound (stereo 44.1 kHz WAV), as the game makes it
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,7 @@
 
 #include "../src/game/Game.h"
 #include "../src/game/GameFile.h"
+#include "../src/audio/PsgSound.h"
 
 
 namespace {
@@ -83,6 +85,7 @@ main(int argc, char** argv)
 	std::vector<long> shots;
 	long every = 0;
 	std::vector<Hold> holds;
+	std::string wavPath;
 	for (int i = 3; i + 1 < argc; i += 2) {
 		std::string a = argv[i];
 		std::string v = argv[i + 1];
@@ -93,6 +96,8 @@ main(int argc, char** argv)
 				shots.push_back(atol(p));
 		} else if (a == "-every")
 			every = atol(v.c_str());
+		else if (a == "-wav")
+			wavPath = v;
 		else if (a == "-key" || a == "-joy") {
 			Hold h;
 			if (a == "-key")
@@ -119,8 +124,15 @@ main(int argc, char** argv)
 	printf("loaded from a %s\n", image.source.c_str());
 	InstallGameImage(image);
 
+	static PsgSound sound;
+	static std::vector<int16_t> samples;
+	gHost.psgWrite = [&](int reg, uint8_t value, uint64_t cycle) {
+		sound.Write(cycle, reg, value);
+	};
 	long frame = 0;
 	gHost.frame = [&]() {
+		if (!wavPath.empty())
+			sound.RenderTo(gClock.cycles, samples);
 		// render the finished frame
 		for (int line = 0; line < Tms9918::kLines; line++)
 			gVdp.RenderLine(line);
@@ -152,5 +164,35 @@ main(int argc, char** argv)
 	} catch (const Stop&) {
 	}
 	printf("%ld frames\n", frame);
+	if (!wavPath.empty()) {
+		FILE* f = fopen(wavPath.c_str(), "wb");
+		if (f != NULL) {
+			uint32_t dataSize = static_cast<uint32_t>(samples.size() * 2);
+			uint32_t v;
+			uint16_t h;
+			fwrite("RIFF", 1, 4, f);
+			v = 36 + dataSize;
+			fwrite(&v, 4, 1, f);
+			fwrite("WAVEfmt ", 1, 8, f);
+			v = 16;
+			fwrite(&v, 4, 1, f);
+			h = 1;
+			fwrite(&h, 2, 1, f);
+			h = 2;
+			fwrite(&h, 2, 1, f);
+			v = PsgSound::kRate;
+			fwrite(&v, 4, 1, f);
+			v = PsgSound::kRate * 4;
+			fwrite(&v, 4, 1, f);
+			h = 4;
+			fwrite(&h, 2, 1, f);
+			h = 16;
+			fwrite(&h, 2, 1, f);
+			fwrite("data", 1, 4, f);
+			fwrite(&dataSize, 4, 1, f);
+			fwrite(samples.data(), 2, samples.size(), f);
+			fclose(f);
+		}
+	}
 	return 0;
 }
