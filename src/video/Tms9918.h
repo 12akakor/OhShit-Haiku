@@ -48,6 +48,10 @@ public:
 
 			const uint8_t*	Vram() const { return fVram; }
 			uint8_t*		VramWritable() { return fVram; }
+
+	// Shows all sprites of a line, not only the first 4 (no flicker; the
+	// status register still reports the fifth sprite as the chip does).
+			void			SetSpriteLimit(bool limit) { fSpriteLimit = limit; }
 			uint16_t		Address() const { return fAddress; }
 
 private:
@@ -60,6 +64,7 @@ private:
 			uint8_t			fReadAhead;
 			uint8_t			fLatch;
 			bool			fLatchFull;
+			bool			fSpriteLimit = true;
 			uint8_t			fFrame[kWidth * kLines];
 };
 

@@ -189,8 +189,9 @@ Tms9918::_RenderSprites(int line, uint8_t* out)
 	bool mag = fReg[1] & 0x01;
 	int size = (size16 ? 16 : 8) * (mag ? 2 : 1);
 
-	int visible[4];
+	int visible[32];
 	int count = 0;
+	bool fifthSeen = false;
 	int last = 0;
 	for (int i = 0; i < 32; i++) {
 		const uint8_t* a = fVram + ((attrBase + i * 4) & 0x3fff);
@@ -200,10 +201,12 @@ Tms9918::_RenderSprites(int line, uint8_t* out)
 		int dy = (line - a[0] - 1) & 0xff;
 		if (dy >= size)
 			continue;
-		if (count == 4) {
+		if (count >= 4 && !fifthSeen) {
+			fifthSeen = true;
 			if ((fStatus & 0x40) == 0)
 				fStatus = static_cast<uint8_t>((fStatus & 0xe0) | 0x40 | i);
-			break;
+			if (fSpriteLimit)
+				break;
 		}
 		visible[count++] = i;
 	}
