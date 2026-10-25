@@ -110,6 +110,9 @@ UpdateMatrix()
 }
 
 
+const size_t kMaxGameFile = 2 * 1024 * 1024;
+
+
 bool
 ReadFile(const std::string& path, std::vector<uint8_t>& data)
 {
@@ -119,10 +122,17 @@ ReadFile(const std::string& path, std::vector<uint8_t>& data)
 	data.clear();
 	uint8_t buf[65536];
 	size_t n;
-	while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
+	bool tooBig = false;
+	while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+		// no known game file is near this size; a larger one is a mistake
+		if (data.size() + n > kMaxGameFile) {
+			tooBig = true;
+			break;
+		}
 		data.insert(data.end(), buf, buf + n);
+	}
 	fclose(f);
-	return true;
+	return !tooBig;
 }
 
 
@@ -188,8 +198,9 @@ FindGame(int argc, char** argv, GameImage* image, std::string* message)
 
 
 // Copies the file the player chose into the settings folder as
-// OhShit.<ext>, so it is found next time.
-void
+// OhShit.<ext>, so it is found next time. Returns false if that failed
+// (the game still runs; it asks for the file again next time).
+bool
 KeepGame(const char* path)
 {
 	std::string p = path;
@@ -201,10 +212,21 @@ KeepGame(const char* path)
 	std::string dir = PlatSettingsDir();
 	std::string target = dir + "/OhShit" + ext;
 	if (target == p)
-		return;
+		return true;
 	std::vector<uint8_t> data;
 	if (!ReadFile(p, data))
-		return;
+		return false;
+	// write next to the target first, so a failure loses nothing
+	std::string temp = target + ".new";
+	FILE* out = fopen(temp.c_str(), "wb");
+	if (out == NULL)
+		return false;
+	bool ok = fwrite(data.data(), 1, data.size(), out) == data.size();
+	ok = fclose(out) == 0 && ok;
+	if (!ok) {
+		remove(temp.c_str());
+		return false;
+	}
 	for (const char* e : { ".rom", ".cas", ".dsk" }) {
 		std::string old = dir + "/OhShit" + e;
 		FILE* f = fopen(old.c_str(), "rb");
@@ -213,11 +235,7 @@ KeepGame(const char* path)
 			rename(old.c_str(), (old + ".old").c_str());
 		}
 	}
-	FILE* out = fopen(target.c_str(), "wb");
-	if (out == NULL)
-		return;
-	fwrite(data.data(), 1, data.size(), out);
-	fclose(out);
+	return rename(temp.c_str(), target.c_str()) == 0;
 }
 
 
@@ -233,7 +251,10 @@ ChooseGame(std::string message, GameImage* image)
 			continue;
 		std::string error;
 		if (LoadFromPath(path, image, &error)) {
-			KeepGame(path);
+			if (!KeepGame(path)) {
+				PlatShowMessage("The game runs, but its file could not be kept in the "
+					"settings folder.\nYou will be asked for it again next time.");
+			}
 			return true;
 		}
 		message = std::string(path) + ":\n" + error;
@@ -449,7 +470,10 @@ EndOfFrame()
 			if (!PlatDroppedFile(path, sizeof(path)))
 				continue;
 			if (LoadFromPath(path, &sNextImage, &error)) {
-				KeepGame(path);
+				if (!KeepGame(path)) {
+					PlatShowMessage("The game runs, but its file could not be kept in "
+						"the settings folder.");
+				}
 				throw NewGameFile();
 			}
 			PlatShowMessage(("Not an Oh Shit! game file: " + error).c_str());
