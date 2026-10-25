@@ -89,7 +89,11 @@ Cycles(uint32_t cycles)
 	gClock.cycles += cycles;
 	if (inside)
 		return;	// charged from the interrupt: the outer call goes on
-	inside = true;
+	// cleared again also when the host leaves with an exception (quit)
+	struct Guard {
+		Guard() { inside = true; }
+		~Guard() { inside = false; }
+	} guard;
 	while (gClock.cycles >= gClock.nextFrame) {
 		gClock.nextFrame += kCyclesPerFrame;
 		gClock.interruptPending = true;
@@ -98,7 +102,6 @@ Cycles(uint32_t cycles)
 		if (gClock.interruptsEnabled && gClock.deliverInterrupts)
 			RunInterrupt();
 	}
-	inside = false;
 }
 
 
