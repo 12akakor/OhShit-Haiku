@@ -252,7 +252,7 @@ PlaySample(uint8_t sample)
 			rest += 31;
 		}
 		hl++;
-		Cycles(rest + 54);
+		Cycles(rest + 67);
 	} while (hl < de);
 	PsgData(0);
 	EI();
